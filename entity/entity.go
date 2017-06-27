@@ -7,6 +7,11 @@ import (
 	"github.com/wardn/uuid"
 )
 
+type Identifier interface {
+	ID() string
+	TypeID() string
+}
+
 func UUID() string {
 	return uuid.NewNoDash()
 }

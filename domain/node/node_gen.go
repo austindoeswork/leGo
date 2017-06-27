@@ -32,11 +32,23 @@ func New(
 	return d, nil
 }
 
-// func NewFromRow(row *sql.Row) (*Node, error) {
-// d := Node
-// err := row.Scan(
-// ////////
-// }
+type Scannable interface {
+	Scan(dest ...interface{}) error
+}
+
+func NewFromRow(row Scannable) (*Node, error) {
+	d := Node{}
+	err := row.Scan(
+		&d.ID,
+		&d.TypeID,
+		&d.Timestamp,
+		&d.Name,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
 
 func Schema() string {
 	return `CREATE TABLE Node (
@@ -68,8 +80,17 @@ UNHEX( '%s' ),
 UNHEX( '%s' ),
 '%s',
 '%s'
-);`,
+)
+ON DUPLICATE KEY UPDATE
+TypeID=UNHEX( '%s' ),
+Timestamp='%s',
+Name='%s'
+;`,
 		o.ID,
+		o.TypeID,
+		o.Timestamp.Format("2006-01-02 15:04:05"),
+		o.Name,
+
 		o.TypeID,
 		o.Timestamp.Format("2006-01-02 15:04:05"),
 		o.Name,

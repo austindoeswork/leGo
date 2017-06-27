@@ -41,11 +41,26 @@ func New(
 	return d, nil
 }
 
-// func NewFromRow(row *sql.Row) (*Desk, error) {
-// d := Desk
-// err := row.Scan(
-// //////////////
-// }
+type Scannable interface {
+	Scan(dest ...interface{}) error
+}
+
+func NewFromRow(row Scannable) (*Desk, error) {
+	d := Desk{}
+	err := row.Scan(
+		&d.ID,
+		&d.TypeID,
+		&d.Timestamp,
+		&d.Name,
+		&d.Lat,
+		&d.Lng,
+		&d.NodeID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
 
 func Schema() string {
 	return `CREATE TABLE Desk (
@@ -87,8 +102,23 @@ UNHEX( '%s' ),
 %f,
 %f,
 UNHEX( '%s' )
-);`,
+)
+ON DUPLICATE KEY UPDATE
+TypeID=UNHEX( '%s' ),
+Timestamp='%s',
+Name='%s',
+Lat=%f,
+Lng=%f,
+NodeID=UNHEX( '%s' )
+;`,
 		o.ID,
+		o.TypeID,
+		o.Timestamp.Format("2006-01-02 15:04:05"),
+		o.Name,
+		o.Lat,
+		o.Lng,
+		o.NodeID,
+
 		o.TypeID,
 		o.Timestamp.Format("2006-01-02 15:04:05"),
 		o.Name,

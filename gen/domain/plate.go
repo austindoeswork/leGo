@@ -46,12 +46,22 @@ func New(
 	return d, nil
 }
 
-// func NewFromRow(row *sql.Row) (*{{ .Name.UpperCamel }}, error) {
-	// d := {{ .Name.UpperCamel }}
-	// err := row.Scan(
-	  // {{ range $i, $param := .Parameters -}}
-	  // {{- end }}
-// }
+type Scannable interface {
+	Scan(dest ...interface{}) error
+}
+
+func NewFromRow(row Scannable) (*{{ .Name.UpperCamel }}, error) {
+	d := {{ .Name.UpperCamel }}{}
+	err := row.Scan(
+	  {{ range $i, $param := .Parameters -}}
+	  &d.{{ $param.Name.UpperCamel }},
+	  {{ end }}
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
 
 func Schema() string {
 	return ` + "`" + `{{ .SQLSchema }} ` + "`" + `
@@ -82,6 +92,15 @@ func (o *{{ .Name.UpperCamel }}) InsertString() string {
 	  o.{{ $param.Name.UpperCamel }}.Format("2006-01-02 15:04:05"),
 	  {{- else -}}
 	  o.{{ $param.Name.UpperCamel }},
+	  {{- end }}
+	  {{ end }}
+	  {{ range $i, $param := .Parameters -}}
+	  {{ if not $param.PrimaryKey -}}
+	  {{ if contains $param.Type.String "time" -}}
+	  o.{{ $param.Name.UpperCamel }}.Format("2006-01-02 15:04:05"),
+	  {{- else -}}
+	  o.{{ $param.Name.UpperCamel }},
+	  {{- end }}
 	  {{- end }}
 	  {{ end }}
 	)
